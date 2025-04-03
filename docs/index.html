@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>15–19 Age Group Population Trends</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    #controls {
+      position: fixed;
+      top: 10px;
+      left: 20px;
+      z-index: 9999;
+      background: white;
+      border: 2px solid #888;
+      padding: 10px;
+      font-size: 14px;
+    }
+    #legend {
+      position: fixed;
+      bottom: 30px;
+      left: 30px;
+      background: white;
+      padding: 10px;
+      font-size: 13px;
+      border: 2px solid #888;
+      z-index: 9999;
+    }
+    #year-label {
+      font-weight: bold;
+    }
+    button {
+      margin: 5px;
+      padding: 4px 10px;
+      font-size: 13px;
+    }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-choropleth"></script>
+</head>
+<body>
+<div id="controls">
+  <div><strong>Year:</strong> <span id="year-label">2019</span></div>
+  <input type="range" min="2019" max="2023" value="2019" id="year-slider" oninput="updateYear(this.value)">
+  <br>
+  <button onclick="setMode('raw')">Raw Population</button>
+  <button onclick="setMode('change')">Percent Change (2019–2023)</button>
+</div>
+<div id="legend"></div>
+<div id="map"></div>
+<script>
+const mapData = {"pop_by_year": {"2019": {"NH": 85875, "NY": 1228202, "RI": 73897, "MA": 461655, "CT": 242575, "MI": 657894, "IL": 837394, "VT": 41975, "NJ": 585992, "OH": 767823, "WI": 389148, "AK": 44706, "HI": 76055, "WV": 108712, "CO": 372942, "CA": 2562726, "LA": 302140, "KY": 289324, "OR": 250770, "NM": 141287, "IN": 464041, "WA": 458137, "VA": 551715, "KS": 205412, "PA": 824330, "MD": 389244, "MO": 395181, "ME": 78679, "IA": 219461, "MN": 371731, "NE": 136134, "MS": 203771, "NC": 690002, "DC": 36266, "GA": 738360, "TN": 436739, "AR": 199828, "NV": 185602, "DE": 62053, "AZ": 470149, "OK": 268942, "AL": 325746, "TX": 2078606, "UT": 265468, "MT": 65751, "FL": 1219892, "SC": 326170, "ID": 140321, "SD": 58300, "WY": 37087, "ND": 49838}, "2020": {"NH": 85778, "NY": 1216385, "RI": 73824, "MA": 449575, "CT": 233889, "MI": 656891, "IL": 836873, "VT": 41927, "NJ": 585766, "OH": 767498, "WI": 389455, "AK": 44658, "HI": 75182, "WV": 108734, "CO": 373774, "CA": 2561585, "LA": 302300, "KY": 289777, "OR": 251281, "NM": 141431, "IN": 464350, "WA": 459008, "VA": 553572, "KS": 205599, "PA": 824028, "MD": 389237, "MO": 395505, "ME": 78725, "IA": 219898, "MN": 372734, "NE": 136607, "MS": 204203, "NC": 684055, "DC": 27949, "GA": 739605, "TN": 437747, "AR": 200294, "NV": 186322, "DE": 62240, "AZ": 471657, "OK": 270006, "AL": 329148, "TX": 2087220, "UT": 267110, "MT": 66042, "FL": 1228835, "SC": 325728, "ID": 141024, "SD": 58572, "WY": 37316, "ND": 50194}, "2021": {"NH": 82992, "NY": 1217978, "RI": 73270, "MA": 456058, "CT": 238744, "MI": 639008, "IL": 831669, "VT": 41976, "NJ": 582667, "OH": 751554, "WI": 380106, "AK": 44718, "HI": 75956, "WV": 108943, "CO": 370840, "CA": 2500776, "LA": 302334, "KY": 288270, "OR": 252742, "NM": 141943, "IN": 466715, "WA": 450039, "VA": 556628, "KS": 206871, "PA": 842311, "MD": 390704, "MO": 399709, "ME": 79817, "IA": 222380, "MN": 376346, "NE": 136941, "MS": 205389, "NC": 699160, "DC": 36107, "GA": 741449, "TN": 437880, "AR": 202982, "NV": 189047, "DE": 63312, "AZ": 472276, "OK": 273813, "AL": 333159, "TX": 2118006, "UT": 272564, "MT": 67789, "FL": 1249813, "SC": 331350, "ID": 145250, "SD": 60009, "WY": 38450, "ND": 52761}, "2022": {"NH": 83944, "NY": 1203878, "RI": 72424, "MA": 452213, "CT": 238509, "MI": 644998, "IL": 826481, "VT": 41779, "NJ": 582455, "OH": 760348, "WI": 387506, "AK": 44616, "HI": 76204, "WV": 109025, "CO": 375658, "CA": 2574672, "LA": 303251, "KY": 290450, "OR": 253091, "NM": 142804, "IN": 468950, "WA": 462322, "VA": 559802, "KS": 208155, "PA": 840179, "MD": 392450, "MO": 402804, "ME": 80972, "IA": 223934, "MN": 376780, "NE": 138812, "MS": 208118, "NC": 706259, "DC": 35978, "GA": 755915, "TN": 446994, "AR": 206153, "NV": 192765, "DE": 64345, "AZ": 488161, "OK": 278127, "AL": 337990, "TX": 2154982, "UT": 277617, "MT": 69160, "FL": 1278162, "SC": 341217, "ID": 147937, "SD": 61641, "WY": 39445, "ND": 54230}, "2023": {"NH": 83133, "NY": 1197346, "RI": 72134, "MA": 452109, "CT": 238243, "MI": 647067, "IL": 828554, "VT": 41827, "NJ": 585506, "OH": 767981, "WI": 390294, "AK": 45036, "HI": 76732, "WV": 109796, "CO": 377434, "CA": 2598287, "LA": 306740, "KY": 293941, "OR": 254957, "NM": 143991, "IN": 473585, "WA": 467813, "VA": 563770, "KS": 209930, "PA": 842590, "MD": 398039, "MO": 406348, "ME": 81159, "IA": 226633, "MN": 384455, "NE": 140990, "MS": 211438, "NC": 716784, "DC": 37674, "GA": 768200, "TN": 456175, "AR": 209477, "NV": 195459, "DE": 65389, "AZ": 495788, "OK": 283726, "AL": 344111, "TX": 2197270, "UT": 282602, "MT": 70474, "FL": 1308671, "SC": 350035, "ID": 150853, "SD": 63178, "WY": 40212, "ND": 55408}}, "percent_change": {"NH": -3.19, "NY": -2.51, "RI": -2.39, "MA": -2.07, "CT": -1.79, "MI": -1.65, "IL": -1.06, "VT": -0.35, "NJ": -0.08, "OH": 0.02, "WI": 0.29, "AK": 0.74, "HI": 0.89, "WV": 1.0, "CO": 1.2, "CA": 1.39, "LA": 1.52, "KY": 1.6, "OR": 1.67, "NM": 1.91, "IN": 2.06, "WA": 2.11, "VA": 2.19, "KS": 2.2, "PA": 2.22, "MD": 2.26, "MO": 2.83, "ME": 3.15, "IA": 3.27, "MN": 3.42, "NE": 3.57, "MS": 3.76, "NC": 3.88, "DC": 3.88, "GA": 4.04, "TN": 4.45, "AR": 4.83, "NV": 5.31, "DE": 5.38, "AZ": 5.45, "OK": 5.5, "AL": 5.64, "TX": 5.71, "UT": 6.45, "MT": 7.18, "FL": 7.28, "SC": 7.32, "ID": 7.51, "SD": 8.37, "WY": 8.43, "ND": 11.18}};
+
+let currentYear = "2019";
+let mode = "raw";
+
+const map = L.map('map').setView([37.8, -96], 4);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 6,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// U.S. states GeoJSON
+fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
+  .then(res => res.json())
+  .then(geoData => {
+    window.geoLayer = L.geoJson(geoData, {
+      style: feature => getStyle(feature.properties.name),
+      onEachFeature: (feature, layer) => {
+        layer.bindPopup(() => getPopupContent(feature.properties.name));
+      }
+    }).addTo(map);
+  });
+
+function getStyle(state) {
+  const value = mode === 'raw'
+    ? mapData.pop_by_year[currentYear]?.[state]
+    : mapData.percent_change[state];
+
+  return {
+    weight: 1,
+    opacity: 1,
+    color: 'white',
+    fillOpacity: 0.8,
+    fillColor: getColor(value)
+  };
+}
+
+function getColor(value) {
+  if (mode === 'raw') {
+    return value > 700000 ? '#084081' :
+           value > 500000 ? '#0868ac' :
+           value > 300000 ? '#2b8cbe' :
+           value > 200000 ? '#4eb3d3' :
+           value > 100000 ? '#7bccc4' :
+           value > 50000  ? '#a8ddb5' :
+                            '#ccebc5';
+  } else {
+    return value > 10 ? '#2b8cbe' :
+           value > 5  ? '#66bd63' :
+           value > 1  ? '#a6d96a' :
+           value > -1 ? '#f0f0f0' :
+           value > -5 ? '#fdae61' :
+           value > -10? '#f46d43' :
+                        '#d73027';
+  }
+}
+
+function updateYear(val) {
+  currentYear = val;
+  document.getElementById("year-label").textContent = val;
+  geoLayer.setStyle(feature => getStyle(feature.properties.name));
+}
+
+function setMode(newMode) {
+  mode = newMode;
+  geoLayer.setStyle(feature => getStyle(feature.properties.name));
+}
+
+function getPopupContent(state) {
+  const pop = mapData.pop_by_year[currentYear]?.[state] || "N/A";
+  const change = mapData.percent_change[state]?.toFixed(2) || "N/A";
+  return `<b>${state}</b><br/>
+          Population (Age 15–19) in ${currentYear}: <b>${pop.toLocaleString()}</b><br/>
+          % Change from 2019–2023: <b>${change}%</b>`;
+}
+</script>
+</body>
+</html>
