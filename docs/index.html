@@ -3,7 +3,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>15–19 Age Group Population Trends</title>
+  <title>15–19 Age Group Population Change by State</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body, #map { height: 100%; margin: 0; }
@@ -26,36 +26,32 @@
       font-size: 13px;
       border: 2px solid #888;
       z-index: 9999;
-    }
-    #year-label {
-      font-weight: bold;
-    }
-    button {
-      margin: 5px;
-      padding: 4px 10px;
-      font-size: 13px;
+      line-height: 1.6;
     }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-choropleth"></script>
 </head>
 <body>
 <div id="controls">
   <div><strong>Year:</strong> <span id="year-label">2019</span></div>
   <input type="range" min="2019" max="2023" value="2019" id="year-slider" oninput="updateYear(this.value)">
-  <br>
-  <button onclick="setMode('raw')">Raw Population</button>
-  <button onclick="setMode('change')">Percent Change (2019–2023)</button>
 </div>
-<div id="legend"></div>
+<div id="legend">
+  <b>% Change (2019–2023)</b><br>
+  <i style="background:#2b8cbe;">&nbsp;&nbsp;&nbsp;</i> &gt; 10%<br>
+  <i style="background:#66bd63;">&nbsp;&nbsp;&nbsp;</i> 5% to 10%<br>
+  <i style="background:#a6d96a;">&nbsp;&nbsp;&nbsp;</i> 1% to 5%<br>
+  <i style="background:#f0f0f0;">&nbsp;&nbsp;&nbsp;</i> -1% to 1%<br>
+  <i style="background:#fdae61;">&nbsp;&nbsp;&nbsp;</i> -1% to -5%<br>
+  <i style="background:#f46d43;">&nbsp;&nbsp;&nbsp;</i> -5% to -10%<br>
+  <i style="background:#d73027;">&nbsp;&nbsp;&nbsp;</i> &lt; -10%<br>
+</div>
 <div id="map"></div>
 <script>
 const mapData = {"pop_by_year": {"2019": {"New Hampshire": 85875, "New York": 1228202, "Rhode Island": 73897, "Massachusetts": 461655, "Connecticut": 242575, "Michigan": 657894, "Illinois": 837394, "Vermont": 41975, "New Jersey": 585992, "Ohio": 767823, "Wisconsin": 389148, "Alaska": 44706, "Hawaii": 76055, "West Virginia": 108712, "Colorado": 372942, "California": 2562726, "Louisiana": 302140, "Kentucky": 289324, "Oregon": 250770, "New Mexico": 141287, "Indiana": 464041, "Washington": 458137, "Virginia": 551715, "Kansas": 205412, "Pennsylvania": 824330, "Maryland": 389244, "Missouri": 395181, "Maine": 78679, "Iowa": 219461, "Minnesota": 371731, "Nebraska": 136134, "Mississippi": 203771, "North Carolina": 690002, "District of Columbia": 36266, "Georgia": 738360, "Tennessee": 436739, "Arkansas": 199828, "Nevada": 185602, "Delaware": 62053, "Arizona": 470149, "Oklahoma": 268942, "Alabama": 325746, "Texas": 2078606, "Utah": 265468, "Montana": 65751, "Florida": 1219892, "South Carolina": 326170, "Idaho": 140321, "South Dakota": 58300, "Wyoming": 37087, "North Dakota": 49838}, "2020": {"New Hampshire": 85778, "New York": 1216385, "Rhode Island": 73824, "Massachusetts": 449575, "Connecticut": 233889, "Michigan": 656891, "Illinois": 836873, "Vermont": 41927, "New Jersey": 585766, "Ohio": 767498, "Wisconsin": 389455, "Alaska": 44658, "Hawaii": 75182, "West Virginia": 108734, "Colorado": 373774, "California": 2561585, "Louisiana": 302300, "Kentucky": 289777, "Oregon": 251281, "New Mexico": 141431, "Indiana": 464350, "Washington": 459008, "Virginia": 553572, "Kansas": 205599, "Pennsylvania": 824028, "Maryland": 389237, "Missouri": 395505, "Maine": 78725, "Iowa": 219898, "Minnesota": 372734, "Nebraska": 136607, "Mississippi": 204203, "North Carolina": 684055, "District of Columbia": 27949, "Georgia": 739605, "Tennessee": 437747, "Arkansas": 200294, "Nevada": 186322, "Delaware": 62240, "Arizona": 471657, "Oklahoma": 270006, "Alabama": 329148, "Texas": 2087220, "Utah": 267110, "Montana": 66042, "Florida": 1228835, "South Carolina": 325728, "Idaho": 141024, "South Dakota": 58572, "Wyoming": 37316, "North Dakota": 50194}, "2021": {"New Hampshire": 82992, "New York": 1217978, "Rhode Island": 73270, "Massachusetts": 456058, "Connecticut": 238744, "Michigan": 639008, "Illinois": 831669, "Vermont": 41976, "New Jersey": 582667, "Ohio": 751554, "Wisconsin": 380106, "Alaska": 44718, "Hawaii": 75956, "West Virginia": 108943, "Colorado": 370840, "California": 2500776, "Louisiana": 302334, "Kentucky": 288270, "Oregon": 252742, "New Mexico": 141943, "Indiana": 466715, "Washington": 450039, "Virginia": 556628, "Kansas": 206871, "Pennsylvania": 842311, "Maryland": 390704, "Missouri": 399709, "Maine": 79817, "Iowa": 222380, "Minnesota": 376346, "Nebraska": 136941, "Mississippi": 205389, "North Carolina": 699160, "District of Columbia": 36107, "Georgia": 741449, "Tennessee": 437880, "Arkansas": 202982, "Nevada": 189047, "Delaware": 63312, "Arizona": 472276, "Oklahoma": 273813, "Alabama": 333159, "Texas": 2118006, "Utah": 272564, "Montana": 67789, "Florida": 1249813, "South Carolina": 331350, "Idaho": 145250, "South Dakota": 60009, "Wyoming": 38450, "North Dakota": 52761}, "2022": {"New Hampshire": 83944, "New York": 1203878, "Rhode Island": 72424, "Massachusetts": 452213, "Connecticut": 238509, "Michigan": 644998, "Illinois": 826481, "Vermont": 41779, "New Jersey": 582455, "Ohio": 760348, "Wisconsin": 387506, "Alaska": 44616, "Hawaii": 76204, "West Virginia": 109025, "Colorado": 375658, "California": 2574672, "Louisiana": 303251, "Kentucky": 290450, "Oregon": 253091, "New Mexico": 142804, "Indiana": 468950, "Washington": 462322, "Virginia": 559802, "Kansas": 208155, "Pennsylvania": 840179, "Maryland": 392450, "Missouri": 402804, "Maine": 80972, "Iowa": 223934, "Minnesota": 376780, "Nebraska": 138812, "Mississippi": 208118, "North Carolina": 706259, "District of Columbia": 35978, "Georgia": 755915, "Tennessee": 446994, "Arkansas": 206153, "Nevada": 192765, "Delaware": 64345, "Arizona": 488161, "Oklahoma": 278127, "Alabama": 337990, "Texas": 2154982, "Utah": 277617, "Montana": 69160, "Florida": 1278162, "South Carolina": 341217, "Idaho": 147937, "South Dakota": 61641, "Wyoming": 39445, "North Dakota": 54230}, "2023": {"New Hampshire": 83133, "New York": 1197346, "Rhode Island": 72134, "Massachusetts": 452109, "Connecticut": 238243, "Michigan": 647067, "Illinois": 828554, "Vermont": 41827, "New Jersey": 585506, "Ohio": 767981, "Wisconsin": 390294, "Alaska": 45036, "Hawaii": 76732, "West Virginia": 109796, "Colorado": 377434, "California": 2598287, "Louisiana": 306740, "Kentucky": 293941, "Oregon": 254957, "New Mexico": 143991, "Indiana": 473585, "Washington": 467813, "Virginia": 563770, "Kansas": 209930, "Pennsylvania": 842590, "Maryland": 398039, "Missouri": 406348, "Maine": 81159, "Iowa": 226633, "Minnesota": 384455, "Nebraska": 140990, "Mississippi": 211438, "North Carolina": 716784, "District of Columbia": 37674, "Georgia": 768200, "Tennessee": 456175, "Arkansas": 209477, "Nevada": 195459, "Delaware": 65389, "Arizona": 495788, "Oklahoma": 283726, "Alabama": 344111, "Texas": 2197270, "Utah": 282602, "Montana": 70474, "Florida": 1308671, "South Carolina": 350035, "Idaho": 150853, "South Dakota": 63178, "Wyoming": 40212, "North Dakota": 55408}}, "percent_change": {"New Hampshire": -3.19, "New York": -2.51, "Rhode Island": -2.39, "Massachusetts": -2.07, "Connecticut": -1.79, "Michigan": -1.65, "Illinois": -1.06, "Vermont": -0.35, "New Jersey": -0.08, "Ohio": 0.02, "Wisconsin": 0.29, "Alaska": 0.74, "Hawaii": 0.89, "West Virginia": 1.0, "Colorado": 1.2, "California": 1.39, "Louisiana": 1.52, "Kentucky": 1.6, "Oregon": 1.67, "New Mexico": 1.91, "Indiana": 2.06, "Washington": 2.11, "Virginia": 2.19, "Kansas": 2.2, "Pennsylvania": 2.22, "Maryland": 2.26, "Missouri": 2.83, "Maine": 3.15, "Iowa": 3.27, "Minnesota": 3.42, "Nebraska": 3.57, "Mississippi": 3.76, "North Carolina": 3.88, "District of Columbia": 3.88, "Georgia": 4.04, "Tennessee": 4.45, "Arkansas": 4.83, "Nevada": 5.31, "Delaware": 5.38, "Arizona": 5.45, "Oklahoma": 5.5, "Alabama": 5.64, "Texas": 5.71, "Utah": 6.45, "Montana": 7.18, "Florida": 7.28, "South Carolina": 7.32, "Idaho": 7.51, "South Dakota": 8.37, "Wyoming": 8.43, "North Dakota": 11.18}};
-
 let currentYear = "2019";
-let mode = "raw";
 
 const map = L.map('map').setView([37.8, -96], 4);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -63,7 +59,6 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// U.S. states GeoJSON
 fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geojson/us-states.json')
   .then(res => res.json())
   .then(geoData => {
@@ -75,49 +70,25 @@ fetch('https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/geo
     }).addTo(map);
   });
 
-function getStyle(state) {
-  const value = mode === 'raw'
-    ? mapData.pop_by_year[currentYear]?.[state]
-    : mapData.percent_change[state];
+function getColor(change) {
+  return change > 10 ? '#2b8cbe' :
+         change > 5  ? '#66bd63' :
+         change > 1  ? '#a6d96a' :
+         change > -1 ? '#f0f0f0' :
+         change > -5 ? '#fdae61' :
+         change > -10? '#f46d43' :
+                       '#d73027';
+}
 
+function getStyle(state) {
+  const change = mapData.percent_change[state];
   return {
     weight: 1,
     opacity: 1,
     color: 'white',
     fillOpacity: 0.8,
-    fillColor: getColor(value)
+    fillColor: getColor(change)
   };
-}
-
-function getColor(value) {
-  if (mode === 'raw') {
-    return value > 700000 ? '#084081' :
-           value > 500000 ? '#0868ac' :
-           value > 300000 ? '#2b8cbe' :
-           value > 200000 ? '#4eb3d3' :
-           value > 100000 ? '#7bccc4' :
-           value > 50000  ? '#a8ddb5' :
-                            '#ccebc5';
-  } else {
-    return value > 10 ? '#2b8cbe' :
-           value > 5  ? '#66bd63' :
-           value > 1  ? '#a6d96a' :
-           value > -1 ? '#f0f0f0' :
-           value > -5 ? '#fdae61' :
-           value > -10? '#f46d43' :
-                        '#d73027';
-  }
-}
-
-function updateYear(val) {
-  currentYear = val;
-  document.getElementById("year-label").textContent = val;
-  geoLayer.setStyle(feature => getStyle(feature.properties.name));
-}
-
-function setMode(newMode) {
-  mode = newMode;
-  geoLayer.setStyle(feature => getStyle(feature.properties.name));
 }
 
 function getPopupContent(state) {
@@ -126,6 +97,12 @@ function getPopupContent(state) {
   return `<b>${state}</b><br/>
           Population (Age 15–19) in ${currentYear}: <b>${pop.toLocaleString()}</b><br/>
           % Change from 2019–2023: <b>${change}%</b>`;
+}
+
+function updateYear(val) {
+  currentYear = val;
+  document.getElementById("year-label").textContent = val;
+  geoLayer.setStyle(feature => getStyle(feature.properties.name));
 }
 </script>
 </body>
